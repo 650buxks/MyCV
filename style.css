@@ -424,6 +424,24 @@ body {
     padding-top: 1rem;
 }
 
+.btn-link {
+    color: var(--accent-color);
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.btn-link:hover {
+    text-decoration: underline;
+    text-underline-offset: 4px;
+}
+
+.btn-link:focus-visible {
+    outline: 2px solid var(--accent-color);
+    outline-offset: 4px;
+    border-radius: 2px;
+}
+
 .btn-link.disabled {
     font-size: 0.85rem;
     color: var(--text-secondary);
