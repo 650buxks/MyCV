@@ -743,3 +743,17 @@ html {
         min-width: 100%;
     }
 }
+
+/* Featured project links */
+.project-links a,
+.project-links a:visited {
+    color: #ff5252;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.project-links a:hover,
+.project-links a:focus-visible {
+    color: #ffffff;
+    text-decoration: underline;
+}
