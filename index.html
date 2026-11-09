@@ -26,6 +26,22 @@
 .motion .quote-meter{display:block;position:absolute;bottom:5svh;left:50%;width:140px;height:1px;background:var(--line);transform:translateX(-50%)}
 .motion .quote-meter span{position:absolute;inset:0;background:var(--orange);transform:scaleX(var(--p,0));transform-origin:left}
 @media(max-width:800px){.motion .quote-screen{min-height:220svh}.motion .quote-stage{top:70px;height:calc(100svh - 70px)}}
+.opening-role{margin:26px 0 0;color:var(--ink);font-size:clamp(12px,1.5vw,19px);font-weight:500;letter-spacing:.55em;padding-left:.55em;text-transform:uppercase}
+.opening-role span{display:inline-block;white-space:nowrap}.name-screen{overflow:hidden}
+.name-screen h1 .word{display:inline-block;white-space:nowrap}
+.name-screen h1 .char{display:inline-block}
+@keyframes char-in{from{opacity:0;transform:translateY(.45em);filter:blur(10px)}to{opacity:1;transform:none;filter:blur(0)}}
+@keyframes role-in{from{opacity:0;letter-spacing:1.4em}to{opacity:1;letter-spacing:.55em}}
+@keyframes mark-in{from{opacity:0;transform:translateY(-18px)}to{opacity:1;transform:none}}
+@keyframes cue-bob{0%,100%{transform:none}50%{transform:translateY(4px)}}
+.motion .name-screen .char{opacity:0;animation:char-in .9s cubic-bezier(.2,.7,.2,1) forwards;animation-delay:calc(var(--i) * 60ms + 250ms)}
+.motion .opening-role span{opacity:0;animation:role-in 1.3s cubic-bezier(.2,.7,.2,1) 1.05s forwards}
+.motion .name-mark>span{display:inline-block;opacity:0;animation:mark-in .9s cubic-bezier(.2,.7,.2,1) .1s forwards}
+.motion .scroll-cue span{display:inline-block;animation:cue-bob 1.8s ease-in-out 2s infinite}
+.motion .name-screen h1{transform:translateY(calc(var(--exit,0) * -110px)) scale(calc(1 - var(--exit,0) * .12));opacity:calc(1 - var(--exit,0) * 1.3)}
+.motion .opening-role{transform:translateY(calc(var(--exit,0) * -60px));opacity:calc(1 - var(--exit,0) * 1.7)}
+.motion .name-mark{transform:translateY(calc(var(--exit,0) * -150px));opacity:calc(1 - var(--exit,0) * 1.8)}
+.motion .scroll-cue{opacity:calc(1 - var(--exit,0) * 4)}
 </style>
     <!-- Google Fonts for modern typography -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -37,8 +53,9 @@
     <div class="scroll-progress" aria-hidden="true"></div>
 
     <section class="name-screen" aria-labelledby="opening-name">
-        <div class="name-mark" aria-hidden="true">FI</div>
+        <div class="name-mark" aria-hidden="true"><span>FI</span></div>
         <h1 id="opening-name">Francis Isip</h1>
+        <p class="opening-role"><span>Software Engineer</span></p>
         <a class="scroll-cue" href="#home">Scroll to explore <span aria-hidden="true">↓</span></a>
     </section>
     <!-- Navigation Bar -->
@@ -290,7 +307,17 @@
   const meter = quote.querySelector('.quote-meter');
   const navbar = document.querySelector('.navbar');
   const targets = document.querySelectorAll('.hero-text > *, .hero-image-container, .section-title, .about-image-wrapper, .about-text > *, .skills-card, .cinematic-break .section-index, .project-visual, .project-content, .community-card, .contact-subtitle, .contact-card');
-  if (!reduced.matches) document.documentElement.classList.add('motion');
+  const opener = document.querySelector('.name-screen');
+  if (!reduced.matches) {
+    document.documentElement.classList.add('motion');
+    // Split the opening name into letters so they can rise in one by one
+    const name = opener.querySelector('h1');
+    let n = 0;
+    name.setAttribute('aria-label', name.textContent.trim());
+    name.innerHTML = name.textContent.trim().split(/\s+/).map(word =>
+      `<span class="word" aria-hidden="true">${[...word].map(c => `<span class="char" style="--i:${n++}">${c}</span>`).join('')}</span>`
+    ).join(' ');
+  }
   if ('IntersectionObserver' in window && !reduced.matches) {
     const observer = new IntersectionObserver(entries => {
       entries.forEach(entry => {
@@ -316,6 +343,8 @@
       const amount = Math.max(-1,Math.min(1,(innerHeight/2-rect.top)/(innerHeight+rect.height)));
       interlude.style.setProperty('--drift',`${amount * 95}px`);
       portrait.style.setProperty('--portrait-drift',`${Math.min(scrollY*.1,45)}px`);
+      // Opening screen: name, role and logo drift up and fade as you scroll past
+      opener.style.setProperty('--exit', Math.min(1, scrollY / opener.offsetHeight).toFixed(3));
       // Pinned quote: words light up one by one, then the rest of the quote appears
       const q = quote.getBoundingClientRect();
       const top = navbar.offsetHeight;
