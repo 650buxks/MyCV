@@ -12,7 +12,20 @@
 .name-mark{color:var(--orange);font-size:42px;font-weight:800;letter-spacing:-.12em;line-height:1;margin-bottom:28px}
 .scroll-cue{position:absolute;bottom:6svh;left:50%;transform:translateX(-50%);font-size:11px;letter-spacing:.14em;text-transform:uppercase;white-space:nowrap;color:var(--muted);padding:12px}.scroll-cue span{color:var(--orange)}
 .quote-screen{background:radial-gradient(ellipse at center,#54250e,#221209 62%,#100d0a);border-block:1px solid #57321e}
-.quote-screen blockquote{margin:0}.quote-screen h2{font-size:clamp(28px,7vw,106px);font-weight:500;text-transform:uppercase;margin-bottom:24px}.quote-screen h2 span{color:var(--orange)}.quote-screen blockquote p{max-width:520px;margin-inline:auto;font-size:clamp(16px,2vw,22px);color:var(--ink)}.quote-credit{font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--orange)}
+.quote-screen blockquote{margin:0}.quote-screen h2{font-size:clamp(28px,7vw,106px);font-weight:500;text-transform:uppercase;margin-bottom:24px}.quote-screen h2 .arrow{color:var(--orange)}.quote-screen blockquote p{max-width:520px;margin-inline:auto;font-size:clamp(16px,2vw,22px);color:var(--ink)}.quote-credit{font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--orange)}
+.quote-stage{display:grid;justify-items:center}
+.quote-screen .w{display:inline-block;transition:color .6s ease,text-shadow .6s ease}
+.motion .quote-screen{display:block;min-height:260svh;padding:0;background:#100d0a}
+.motion .quote-stage{width:100%;position:sticky;top:84px;height:calc(100svh - 84px);place-content:center;padding:40px 6vw;background:radial-gradient(ellipse at center,#54250e,#221209 62%,#100d0a)}
+.motion .quote-screen .w{opacity:calc(.12 + var(--lit,0) * .88);filter:blur(calc((1 - var(--lit,0)) * 5px));transform:translateY(calc((1 - var(--lit,0)) * .15em))}
+.motion .quote-screen.done .w:last-child{color:var(--orange);text-shadow:0 0 36px #ff741f66}
+.motion .quote-screen blockquote p,.motion .quote-credit{opacity:0;transform:translateY(20px);transition:opacity .8s ease,transform .9s cubic-bezier(.2,.7,.2,1)}
+.motion .quote-credit{transition-delay:.15s}
+.motion .quote-screen.done blockquote p,.motion .quote-screen.done .quote-credit{opacity:1;transform:none}
+.quote-meter{display:none}
+.motion .quote-meter{display:block;position:absolute;bottom:5svh;left:50%;width:140px;height:1px;background:var(--line);transform:translateX(-50%)}
+.motion .quote-meter span{position:absolute;inset:0;background:var(--orange);transform:scaleX(var(--p,0));transform-origin:left}
+@media(max-width:800px){.motion .quote-screen{min-height:220svh}.motion .quote-stage{top:70px;height:calc(100svh - 70px)}}
 </style>
     <!-- Google Fonts for modern typography -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -96,11 +109,14 @@
             </div>
         </section>
 <section class="quote-screen" aria-labelledby="quote-title">
-            <blockquote>
-                <h2 id="quote-title">Good <span>→</span> Better <span>→</span> Best.</h2>
-                <p>Never let it rest ’til your good is better and your better is best.</p>
-            </blockquote>
-            <p class="quote-credit">— From a Big Brother Figure</p>
+            <div class="quote-stage">
+                <blockquote>
+                    <h2 id="quote-title" aria-label="Good, better, best."><span class="w">Good</span> <span class="w arrow" aria-hidden="true">→</span> <span class="w">Better</span> <span class="w arrow" aria-hidden="true">→</span> <span class="w">Best.</span></h2>
+                    <p>Never let it rest ’til your good is better and your better is best.</p>
+                </blockquote>
+                <p class="quote-credit">— From a Big Brother Figure</p>
+                <div class="quote-meter" aria-hidden="true"><span></span></div>
+            </div>
         </section>
         <!-- Skills Section -->
         <section id="skills" class="skills">
@@ -269,7 +285,12 @@
   const progress = document.querySelector('.scroll-progress');
   const interlude = document.querySelector('.cinematic-break');
   const portrait = document.querySelector('.hero-img');
-  const targets = document.querySelectorAll('.quote-screen h2, .quote-screen blockquote p, .quote-credit, .hero-text > *, .hero-image-container, .section-title, .about-image-wrapper, .about-text > *, .skills-card, .cinematic-break .section-index, .project-visual, .project-content, .community-card, .contact-subtitle, .contact-card');
+  const quote = document.querySelector('.quote-screen');
+  const words = [...quote.querySelectorAll('.w')];
+  const meter = quote.querySelector('.quote-meter');
+  const navbar = document.querySelector('.navbar');
+  const targets = document.querySelectorAll('.hero-text > *, .hero-image-container, .section-title, .about-image-wrapper, .about-text > *, .skills-card, .cinematic-break .section-index, .project-visual, .project-content, .community-card, .contact-subtitle, .contact-card');
+  if (!reduced.matches) document.documentElement.classList.add('motion');
   if ('IntersectionObserver' in window && !reduced.matches) {
     const observer = new IntersectionObserver(entries => {
       entries.forEach(entry => {
@@ -295,13 +316,25 @@
       const amount = Math.max(-1,Math.min(1,(innerHeight/2-rect.top)/(innerHeight+rect.height)));
       interlude.style.setProperty('--drift',`${amount * 95}px`);
       portrait.style.setProperty('--portrait-drift',`${Math.min(scrollY*.1,45)}px`);
+      // Pinned quote: words light up one by one, then the rest of the quote appears
+      const q = quote.getBoundingClientRect();
+      const top = navbar.offsetHeight;
+      const span = q.height - (innerHeight - top);
+      const qp = span > 0 ? Math.max(0, Math.min(1, (top - q.top) / span)) : 1;
+      const lit = Math.max(0, Math.min(1, (qp - .05) / .6)) * words.length;
+      words.forEach((w, i) => w.style.setProperty('--lit', Math.max(0, Math.min(1, lit - i)).toFixed(3)));
+      quote.classList.toggle('done', qp > .7);
+      meter.style.setProperty('--p', qp.toFixed(3));
     }
     pending=false;
   }
   addEventListener('scroll', () => {if(!pending){pending=true;requestAnimationFrame(update);}}, {passive:true});
   addEventListener('resize',update);
   reduced.addEventListener('change', () => {
-    if(reduced.matches) targets.forEach(el=>el.classList.add('is-visible'));
+    if(reduced.matches) {
+      document.documentElement.classList.remove('motion');
+      targets.forEach(el=>el.classList.add('is-visible'));
+    }
     update();
   });
   update();
